@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrestHermi - Die Zukunft der KI Agenten</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --neon-cyan: #00f0ff;
+            --neon-purple: #b400ff;
+            --neon-pink: #ff00aa;
+            --dark-bg: #0a0a0f;
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--dark-bg);
+            color: white;
+            overflow-x: hidden;
+            cursor: crosshair;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .hero h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(2rem, 8vw, 5rem);
+            font-weight: 900;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: glitch 3s infinite;
+            text-shadow: 0 0 50px rgba(0, 240, 255, 0.5);
+        }
+
+        @keyframes glitch {
+            0%, 90%, 100% { transform: translate(0); }
+            92% { transform: translate(-2px, 2px); }
+            94% { transform: translate(2px, -2px); }
+            96% { transform: translate(-2px, -2px); }
+            98% { transform: translate(2px, 2px); }
+        }
+
+        .hero .subtitle {
+            font-size: clamp(1rem, 3vw, 1.5rem);
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 1rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+        }
+
+        .typing {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.2rem;
+            color: var(--neon-cyan);
+            margin-top: 2rem;
+            min-height: 2rem;
+        }
+
+        .typing::after {
+            content: '|';
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2rem;
+            animation: bounce 2s infinite;
+        }
+
+        .scroll-indicator span {
+            display: block;
+            width: 20px;
+            height: 20px;
+            border-right: 2px solid var(--neon-cyan);
+            border-bottom: 2px solid var(--neon-cyan);
+            transform: rotate(45deg);
+            margin: -5px;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(10px); }
+            60% { transform: translateY(5px); }
+        }
+
+        section {
+            min-height: 100vh;
+            padding: 5rem 2rem;
+            position: relative;
+        }
+
+        .section-title {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            text-align: center;
+            margin-bottom: 3rem;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 20px var(--neon-cyan);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .stat-card {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .stat-card:hover::before {
+            left: 100%;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.3);
+        }
+
+        .stat-number {
+            font-family: 'Orbitron', monospace;
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .chart-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .timeline {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, var(--neon-cyan), var(--neon-purple), var(--neon-pink));
+            transform: translateX(-50%);
+        }
+
+        .timeline-item {
+            position: relative;
+            padding: 2rem;
+            width: 50%;
+            box-sizing: border-box;
+        }
+
+        .timeline-item:nth-child(odd) {
+            margin-left: auto;
+            text-align: left;
+            padding-left: 3rem;
+        }
+
+        .timeline-item:nth-child(even) {
+            text-align: right;
+            padding-right: 3rem;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: var(--neon-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 20px var(--neon-cyan);
+            top: 2rem;
+        }
+
+        .timeline-item:nth-child(odd)::before {
+            left: -10px;
+        }
+
+        .timeline-item:nth-child(even)::before {
+            right: -10px;
+        }
+
+        .timeline-year {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            color: var(--neon-cyan);
+        }
+
+        .timeline-text {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 0.5rem;
+        }
+
+        .agent-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .agent-card {
+            background: linear-gradient(145deg, rgba(0, 240, 255, 0.1), rgba(180, 0, 255, 0.1));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .agent-card:hover {
+            transform: scale(1.05);
+            border-color: var(--neon-purple);
+            box-shadow: 0 0 40px rgba(180, 0, 255, 0.4);
+        }
+
+        .agent-card h3 {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.3rem;
+            color: var(--neon-purple);
+            margin-bottom: 1rem;
+        }
+
+        .agent-card p {
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.6;
+        }
+
+        .agent-card .badge {
+            display: inline-block;
+            padding: 0.3rem 1rem;
+            background: var(--neon-cyan);
+            color: var(--dark-bg);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-top: 1rem;
+        }
+
+        .neon-line {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--neon-cyan), var(--neon-purple), var(--neon-pink), transparent);
+            margin: 3rem auto;
+            max-width: 80%;
+        }
+
+        .quote {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            font-size: 1.5rem;
+            font-style: italic;
+            color: rgba(255, 255, 255, 0.8);
+            position: relative;
+            padding: 2rem;
+        }
+
+        .quote::before {
+            content: '"';
+            font-family: 'Orbitron', monospace;
+            font-size: 5rem;
+            color: var(--neon-cyan);
+            opacity: 0.3;
+            position: absolute;
+            top: -20px;
+            left: 0;
+        }
+
+        .quote-author {
+            margin-top: 1rem;
+            font-size: 1rem;
+            color: var(--neon-purple);
+            font-style: normal;
+        }
+
+        footer {
+            text-align: center;
+            padding: 3rem;
+            background: rgba(0, 0, 0, 0.5);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        footer p {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+        }
+
+        footer .heart {
+            color: var(--neon-pink);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .matrix-rain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.1;
+        }
+
+        @media (max-width: 768px) {
+            .timeline::before {
+                left: 20px;
+            }
+            .timeline-item {
+                width: 100%;
+                padding-left: 50px !important;
+                padding-right: 1rem !important;
+                text-align: left !important;
+            }
+            .timeline-item::before {
+                left: 10px !important;
+                right: auto !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+
+    <section class="hero">
+        <h1>TRESTHERMI</h1>
+        <p class="subtitle">Die Zukunft der KI Agenten</p>
+        <div class="typing" id="typing-text"></div>
+        <div class="scroll-indicator">
+            <span></span>
+            <span></span>
+        </div>
+    </section>
+
+    <section id="stats">
+        <h2 class="section-title">// STATISTIKEN 2026</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" data-target="85">0</div>
+                <div class="stat-label">Mrd. USD Investitionen</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" data-target="40">0</div>
+                <div class="stat-label">% aller Software nutzt KI</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" data-target="1000">0</div>
+                <div class="stat-label">+ KI Agenten im Umlauf</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" data-target="200">0</div>
+                <div class="stat-label">% Produktivitätssteigerung</div>
+            </div>
+        </div>
+    </section>
+
+    <div class="neon-line"></div>
+
+    <section id="growth">
+        <h2 class="section-title">// WACHSTUM</h2>
+        <div class="chart-container">
+            <canvas id="growthChart"></canvas>
+        </div>
+    </section>
+
+    <div class="neon-line"></div>
+
+    <section id="timeline-section">
+        <h2 class="section-title">// ZEITLEISTE</h2>
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-year">2023</div>
+                <div class="timeline-text">GPT-4 und erste KI Agenten erscheinen. Die Revolution beginnt.</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-year">2024</div>
+                <div class="timeline-text">Autonome Agenten werden alltagstauglich. GitHub Copilot, ChatGPT.</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-year">2025</div>
+                <div class="timeline-text">Multi-Agent Systeme arbeiten zusammen. Hermi und andere Spezialisten entstehen.</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-year">2026</div>
+                <div class="timeline-text">KI Agenten wie Hermi werden zumStandard-Werkzeug für Entwickler.</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-year">2030</div>
+                <div class="timeline-text">Prognose: Jeder Entwickler arbeitet mit mindestens 5 KI Agenten.</div>
+            </div>
+        </div>
+    </section>
+
+    <div class="neon-line"></div>
+
+    <section id="agents">
+        <h2 class="section-title">// KI AGENTEN TYPEN</h2>
+        <div class="agent-cards">
+            <div class="agent-card">
+                <h3>Code Agenten</h3>
+                <p>Schreiben, debuggen und refaktorieren Code autonom. Wie Hermi - unser digitaler Entwickler-Partner.</p>
+                <span class="badge">AKTIV</span>
+            </div>
+            <div class="agent-card">
+                <h3>Research Agenten</h3>
+                <p>Durchsuchen Web, analysieren Papers und synthetisieren Wissen in Sekunden.</p>
+                <span class="badge">AKTIV</span>
+            </div>
+            <div class="agent-card">
+                <h3>Data Agenten</h3>
+                <p>Verarbeiten, bereinigen und visualisieren Daten automatisch.</p>
+                <span class="badge">BETA</span>
+            </div>
+            <div class="agent-card">
+                <h3>DevOps Agenten</h3>
+                <p>Deployen, überwachen und skalieren Anwendungen autonomous.</p>
+                <span class="badge">AKTIV</span>
+            </div>
+        </div>
+    </section>
+
+    <div class="neon-line"></div>
+
+    <section id="quote-section">
+        <div class="quote">
+            Jeder Entwickler wird in Zukunft mit KI Agenten arbeiten - nicht als Ersatz, sondern als mächtige Erweiterung ihrer Fähigkeiten.
+            <div class="quote-author">- Die Zukunft ist jetzt</div>
+        </div>
+    </section>
+
+    <footer>
+        <p>Erstellt mit <span class="heart">&#9829;</span> und KI Agenten | TrestHermi 2026</p>
+    </footer>
+
+    <script>
+        // Three.js Background
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        // Particles
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlesCount = 5000;
+        const posArray = new Float32Array(particlesCount * 3);
+
+        for (let i = 0; i < particlesCount * 3; i++) {
+            posArray[i] = (Math.random() - 0.5) * 10;
+        }
+
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+
+        const particlesMaterial = new THREE.PointsMaterial({
+            size: 0.005,
+            color: 0x00f0ff,
+            transparent: true,
+            opacity: 0.8
+        });
+
+        const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particlesMesh);
+
+        // Grid
+        const gridHelper = new THREE.GridHelper(20, 50, 0x00f0ff, 0x1a1a2e);
+        gridHelper.position.y = -2;
+        scene.add(gridHelper);
+
+        camera.position.z = 3;
+
+        let mouseX = 0;
+        let mouseY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+            mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            particlesMesh.rotation.y += 0.001;
+            particlesMesh.rotation.x += 0.0005;
+
+            particlesMesh.position.x += mouseX * 0.001;
+            particlesMesh.position.y += mouseY * 0.001;
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Typing Effect
+        const texts = [
+            "KI Agenten transformieren die Softwareentwicklung...",
+            "Hermi ist dein digitaler Entwickler-Partner...",
+            "Die Zukunft gehört denen, die mit KI arbeiten...",
+            "Automatisierung beginnt hier..."
+        ];
+        let textIndex = 0;
+        let charIndex = 0;
+        let isDeleting = false;
+        const typingElement = document.getElementById('typing-text');
+
+        function type() {
+            const currentText = texts[textIndex];
+
+            if (isDeleting) {
+                typingElement.textContent = currentText.substring(0, charIndex - 1);
+                charIndex--;
+            } else {
+                typingElement.textContent = currentText.substring(0, charIndex + 1);
+                charIndex++;
+            }
+
+            let typeSpeed = isDeleting ? 30 : 80;
+
+            if (!isDeleting && charIndex === currentText.length) {
+                typeSpeed = 2000;
+                isDeleting = true;
+            } else if (isDeleting && charIndex === 0) {
+                isDeleting = false;
+                textIndex = (textIndex + 1) % texts.length;
+                typeSpeed = 500;
+            }
+
+            setTimeout(type, typeSpeed);
+        }
+        type();
+
+        // Counter Animation
+        function animateCounter(el) {
+            const target = parseInt(el.dataset.target);
+            const duration = 2000;
+            const step = target / (duration / 16);
+            let current = 0;
+
+            const update = () => {
+                current += step;
+                if (current < target) {
+                    el.textContent = Math.floor(current);
+                    requestAnimationFrame(update);
+                } else {
+                    el.textContent = target;
+                }
+            };
+            update();
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const counters = entry.target.querySelectorAll('.stat-number');
+                    counters.forEach(animateCounter);
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        observer.observe(document.getElementById('stats'));
+
+        // Growth Chart
+        const ctx = document.getElementById('growthChart').getContext('2d');
+        const growthChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['2020', '2021', '2022', '2023', '2024', '2025', '2026'],
+                datasets: [{
+                    label: 'KI Agenten Markt (Mrd. USD)',
+                    data: [1.2, 2.8, 5.5, 12, 28, 55, 85],
+                    borderColor: '#00f0ff',
+                    backgroundColor: 'rgba(0, 240, 255, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#00f0ff',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: { color: '#fff' }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: '#fff' },
+                        grid: { color: 'rgba(255,255,255,0.1)' }
+                    },
+                    x: {
+                        ticks: { color: '#fff' },
+                        grid: { color: 'rgba(255,255,255,0.1)' }
+                    }
+                }
+            }
+        });
+
+        // Scroll animations
+        const fadeInElements = document.querySelectorAll('.stat-card, .agent-card, .timeline-item');
+        const fadeObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        fadeInElements.forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(50px)';
+            el.style.transition = 'all 0.6s ease';
+            fadeObserver.observe(el);
+        });
+    </script>
+</body>
+</html>
